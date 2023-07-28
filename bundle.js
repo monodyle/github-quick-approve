@@ -51,12 +51,12 @@ const { host_permissions, ...firefoxManifest } = {
     ...commonManifest.host_permissions,
     ...commonManifest.permissions,
   ],
-  browser_specific_settings: {
+  /* browser_specific_settings: {
     gecko: {
       id: '',
       strict_min_version: '57.0a1',
     },
-  },
+  }, */
 }
 writeDist('firefox', 'manifest.json', JSON.stringify(firefoxManifest, null, 2))
 
