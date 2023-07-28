@@ -1,0 +1,18 @@
+{
+  "name": "github-quick-approve",
+  "type": "module",
+  "version": "1.0.0",
+  "homepage": "https://github.com/monodyle/github-quick-approve",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/monodyle/github-quick-approve.git"
+  },
+  "author": "monodyle <monodylh@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "zip": "node bundle.js --args zip"
+  },
+  "devDependencies": {
+    "archiver": "5.3.1"
+  }
+}
