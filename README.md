@@ -14,6 +14,7 @@ Why might you need this? There are times when you need a fast review of a PR. Th
 
 - Chrome: TBU
 - Firefox: TBU
+- UserScript: [Click to install](https://raw.githubusercontent.com/monodyle/github-quick-approve/main/GithubQuickApprove.user.js)
 
 ## License
 
