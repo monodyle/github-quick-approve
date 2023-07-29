@@ -13,7 +13,7 @@ Why might you need this? There are times when you need a fast review of a PR. Th
 ## Installation
 
 - Chrome: TBU
-- Firefox: TBU
+- [Firefox](https://addons.mozilla.org/en-US/firefox/addon/github-quick-approve/)
 - UserScript: [Click to install](https://raw.githubusercontent.com/monodyle/github-quick-approve/main/GithubQuickApprove.user.js)
 
 ## License
