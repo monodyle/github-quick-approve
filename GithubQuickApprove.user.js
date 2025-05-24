@@ -13,64 +13,23 @@
 // @updateURL   https://raw.githubusercontent.com/monodyle/github-quick-approve/main/GithubQuickApprove.user.js
 // ==/UserScript==
 
-const insertButton = () => {
-  const prevForm = document.getElementById("quick-approve-form");
-  if (prevForm) prevForm.remove();
-
-  const paths = window.location.pathname.split("/").slice(1, 5);
-
-  const form = document.createElement("form");
-  form.setAttribute("id", "quick-approve-form");
-  form.setAttribute("action", "/" + paths.join("/") + "/reviews");
-  form.setAttribute("accept-charset", "UTF-8");
-  form.setAttribute("method", "post");
-
-  const methodInput = document.createElement("input");
-  methodInput.setAttribute("type", "hidden");
-  methodInput.setAttribute("name", "_method");
-  methodInput.setAttribute("value", "put");
-  form.append(methodInput);
-
-  const authenticityTokenInput = document.createElement("input");
-  authenticityTokenInput.setAttribute("type", "hidden");
-  authenticityTokenInput.setAttribute("name", "authenticity_token");
-  form.append(authenticityTokenInput);
-
-  const headShaInput = document.createElement("input");
-  headShaInput.setAttribute("type", "hidden");
-  headShaInput.setAttribute("name", "head_sha");
-  headShaInput.setAttribute("id", "head_sha");
-  form.append(headShaInput);
-
-  const csrfInput = document.createElement("input");
-  csrfInput.setAttribute("type", "hidden");
-  csrfInput.setAttribute("data-csrf", "true");
-  form.append(csrfInput);
-
-  const approveRadio = document.createElement("input");
-  approveRadio.setAttribute("type", "radio");
-  approveRadio.setAttribute("name", "pull_request_review[event]");
-  approveRadio.setAttribute("value", "approve");
-  approveRadio.setAttribute("checked", "true");
-  approveRadio.setAttribute(
-    "style",
-    "visibility: hidden;position: absolute;width: 0;height: 0;overflow: hidden;"
+function prIsOpenAndNotApproved() {
+  const currentPRIsOpen = document.querySelector('span.State--open');
+  const currentPRIsAlreadyApproved = document.querySelector(
+    'input[name="pull_request_review[event]"][value="approve"]:checked'
   );
-  form.append(approveRadio);
 
-  const approveButton = document.createElement("button");
-  approveButton.setAttribute("type", "submit");
-  approveButton.classList.add("btn");
-  approveButton.classList.add("btn-sm");
-  approveButton.classList.add("btn-primary");
-  approveButton.innerText = "Quick Approve";
-  approveButton.setAttribute("style", "margin-right: 4px");
-  form.append(approveButton);
+
+  return (!currentPRIsAlreadyApproved && currentPRIsOpen)
+}
+
+function updateFormWithRemoteData(form, csrfInput, authenticityTokenInput, headShaInput) {
+  const paths = window.location.pathname.split("/").slice(1, 5);
+  form.setAttribute("action", "/" + paths.join("/") + "/reviews");
+
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function () {
-    // console.debug('onreadystatechange')
-    if (xhr.readyState === 4) {
-      // console.debug('xhr.readyState')
+    if (xhr.readyState === /* DONE */ 4) {
       if (
         /name="pull_request_review\[event\]" value="approve" disabled/g.test(
           xhr.responseText
@@ -84,9 +43,6 @@ const insertButton = () => {
         console.error("Error", xhr.status, xhr.statusText);
         return;
       }
-      /*
-             /<form id="pull_requests_submit_review".*name="authenticity_token" value="([^"]+)".+\n\s+.+id="head_sha" value="([^"]+)".+\n.*\n.*\n.+value="([^"]+)" data-csrf="true"/g
-            */
 
       const parser = new DOMParser();
       const responseXML = parser.parseFromString(xhr.responseText, "text/html");
@@ -125,6 +81,68 @@ const insertButton = () => {
   };
   xhr.open("GET", `${githubHost}/${paths.join("/")}/files`);
   xhr.send();
+}
+
+const insertButton = () => {
+  const prevForm = document.getElementById("quick-approve-form");
+  if (prevForm) prevForm.remove();
+
+  if (!prIsOpenAndNotApproved()) {
+    console.log("not open OR already approved")
+    return;
+  }
+
+
+  const form = document.createElement("form");
+  form.setAttribute("id", "quick-approve-form");
+  form.setAttribute("accept-charset", "UTF-8");
+  form.setAttribute("method", "post");
+
+  const methodInput = document.createElement("input");
+  methodInput.setAttribute("type", "hidden");
+  methodInput.setAttribute("name", "_method");
+  methodInput.setAttribute("value", "put");
+  form.append(methodInput);
+
+  const authenticityTokenInput = document.createElement("input");
+  authenticityTokenInput.setAttribute("type", "hidden");
+  authenticityTokenInput.setAttribute("name", "authenticity_token");
+  form.append(authenticityTokenInput);
+
+  const headShaInput = document.createElement("input");
+  headShaInput.setAttribute("type", "hidden");
+  headShaInput.setAttribute("name", "head_sha");
+  headShaInput.setAttribute("id", "head_sha");
+  form.append(headShaInput);
+
+  const csrfInput = document.createElement("input");
+  csrfInput.setAttribute("type", "hidden");
+  csrfInput.setAttribute("data-csrf", "true");
+  form.append(csrfInput);
+
+  const approveRadio = document.createElement("input");
+  approveRadio.setAttribute("type", "radio");
+  approveRadio.setAttribute("name", "pull_request_review[event]");
+  approveRadio.setAttribute("value", "approve");
+  approveRadio.setAttribute("checked", "true");
+  approveRadio.setAttribute(
+    "style",
+    "visibility: hidden;position: absolute;width: 0;height: 0;overflow: hidden;"
+  );
+  form.append(approveRadio);
+
+
+  const approveButton = document.createElement("button");
+  approveButton.setAttribute("type", "submit");
+  approveButton.classList.add("btn");
+  approveButton.classList.add("btn-sm");
+  approveButton.classList.add("btn-primary");
+
+  approveButton.innerText = "Quick Approve";
+  approveButton.setAttribute("style", "margin-right: 4px");
+  form.append(approveButton);
+
+  updateFormWithRemoteData(form, csrfInput, authenticityTokenInput, headShaInput);
 
   const headerActions = document.querySelector(".gh-header-actions");
   if (headerActions) {
@@ -132,25 +150,27 @@ const insertButton = () => {
   }
 };
 
-let oldHref = document.location.href;
+let oldHref = document.location.pathname;
 const githubHost = window.location.origin;
-const documentMutationObserver = new MutationObserver((_) => {
-  if (oldHref !== document.location.href) {
-    oldHref = document.location.href;
-    if (document.location.pathname.match(/\/pull\/\d+/)) {
-      insertButton();
+function checkAndInsert() {
+    const isPullRequestPage = /^\/[^/]+\/[^/]+\/pull\/\d+/.test(window.location.pathname);
+    if (isPullRequestPage) {
+      window.addEventListener("DOMContentLoaded", insertButton, { once: true });
     }
-  }
-});
+};
+const observeUrlChange = () => {
+    // For SPA navigation (GitHub uses pjax)
+    const observer = new MutationObserver(() => {
+        if (window.location.pathname !== oldHref) {
+            oldHref = window.location.pathname;
+            checkAndInsert();
+        }
+    });
 
-document.addEventListener("DOMContentLoaded", () => {
-  documentMutationObserver.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-  const path = window.location.pathname;
-  if (path.match(/\/pull\/\d+/)) {
-    insertButton();
-  }
-});
-window.onload = documentMutationObserver;
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Initial check
+    checkAndInsert();
+};
+
+observeUrlChange();
